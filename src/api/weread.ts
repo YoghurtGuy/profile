@@ -1,21 +1,25 @@
-import { WeReadBook, WeReadChapter, WeReadHighlight, WeReadRawBook, WeReadRawHighlight, WeReadChapterResponse } from '@/types/weread';
+import { WeReadBook, WeReadMiniShelf } from '@/types/weread';
 
-// const WEREAD_URL = "https://weread.qq.com/";
-const WEREAD_NOTEBOOKS_URL = "https://i.weread.qq.com/user/notebooks";
-const WEREAD_BOOKMARKLIST_URL = "https://i.weread.qq.com/book/bookmarklist";
-const WEREAD_CHAPTER_INFO = "https://i.weread.qq.com/book/chapterInfos";
 
 /**
  * 获取最近阅读的书籍列表
  */
 export async function getRecentBooks(limit: number = 10): Promise<WeReadBook[]> {
   try {
-    const response = await fetch(WEREAD_NOTEBOOKS_URL, {
+    const url = new URL('https://weread.qq.com/mp/home/miniShelf');
+    url.search = new URLSearchParams({
+      withLecture:'1',
+      count:limit.toString(),
+      vid:process.env.WECHAT_VID??'',
+      skey:process.env.WECHAT_SKEY??'',
+      platform:'wp',
+    }).toString();
+    const response = await fetch(url, {
       headers: {
-        'Cookie': decodeURIComponent(process.env.WEREAD_COOKIE || ''),
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 MicroMessenger/6.8.0(0x16080000) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.9(0x13080910) XWEB/1227",
         'Origin': 'https://weread.qq.com',
         'Referer': 'https://weread.qq.com/',
+        "Content-Type": 'application/json'
       },
     });
 
@@ -24,15 +28,11 @@ export async function getRecentBooks(limit: number = 10): Promise<WeReadBook[]> 
     }
 
     const data = await response.json();
-    const books: WeReadBook[] = (data.books as WeReadRawBook[])
-      .sort((a, b) => b.sort - a.sort)
-      .slice(0, limit)
+    const books: WeReadBook[] = (data.data as WeReadMiniShelf[])
       .map((book) => ({
-        bookId: book.book.bookId,
-        title: book.book.title,
-        author: book.book.author,
-        cover: book.book.cover.replace("/s_", "/t7_"),
-        sort: book.sort
+        bookId: book.bookId,
+        title: book.title,
+        cover: book.cover.replace("/s_", "/t7_"),
       }));
 
     return books;
@@ -41,81 +41,3 @@ export async function getRecentBooks(limit: number = 10): Promise<WeReadBook[]> 
     throw error;
   }
 }
-
-/**
- * 获取书籍的划线内容
- */
-export async function getBookHighlights(bookId: string): Promise<WeReadHighlight[]> {
-  try {
-    const response = await fetch(`${WEREAD_BOOKMARKLIST_URL}?bookId=${bookId}`, {
-      headers: {
-        'Cookie': process.env.WEREAD_COOKIE || '',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('获取划线数据失败');
-    }
-
-    const data = await response.json();
-    const highlights: WeReadHighlight[] = (data.updated as WeReadRawHighlight[])
-      .sort((a, b) => {
-        if (a.chapterUid === b.chapterUid) {
-          return parseInt(a.range.split('-')[0]) - parseInt(b.range.split('-')[0]);
-        }
-        return a.chapterUid - b.chapterUid;
-      })
-      .map((item) => ({
-        bookId,
-        chapterUid: item.chapterUid,
-        markText: item.markText,
-        style: item.style,
-        colorStyle: item.colorStyle,
-        reviewId: item.reviewId,
-        abstract: item.abstract
-      }));
-
-    return highlights;
-  } catch (error) {
-    console.error('获取划线数据失败:', error);
-    throw error;
-  }
-}
-
-/**
- * 获取书籍章节信息
- */
-export async function getChapterInfo(bookId: string): Promise<WeReadChapter[]> {
-  try {
-    const response = await fetch(WEREAD_CHAPTER_INFO, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': process.env.WEREAD_COOKIE || '',
-      },
-      body: JSON.stringify({
-        bookIds: [bookId],
-        synckeys: [0],
-        teenmode: 0
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('获取章节信息失败');
-    }
-
-    const data = await response.json() as WeReadChapterResponse;
-    if (data.data?.[0]?.updated) {
-      return data.data[0].updated.map((chapter) => ({
-        chapterUid: chapter.chapterUid,
-        title: chapter.title,
-        level: chapter.level
-      }));
-    }
-
-    return [];
-  } catch (error) {
-    console.error('获取章节信息失败:', error);
-    throw error;
-  }
-} 

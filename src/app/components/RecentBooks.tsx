@@ -26,7 +26,7 @@ export default function RecentBooks({ books }: RecentBooksProps) {
             </CardBody>
             <CardFooter className="text-small flex-col items-center">
               <b className="line-clamp-1 text-center">{book.title}</b>
-              <p className="text-default-500 text-tiny line-clamp-1 text-center">{book.author}</p>
+              {book.author&&<p className="text-default-500 text-tiny line-clamp-1 text-center">{book.author}</p>}
             </CardFooter>
           </Card>
         ))}

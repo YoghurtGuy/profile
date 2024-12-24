@@ -10,7 +10,7 @@ import { getWatched } from '@/api/douban';
 export default async function HomePage() {
   try {
     const [recentVideo, music, books] = await Promise.all([
-      getWatched('182705450', 1),
+      process.env.DOUBAN_ID?getWatched(process.env.DOUBAN_ID, 1):[],
       process.env.MUSIC_TYPE == "top" 
         ? getTopTracks(10, process.env.MUSIC_PEERIOD)
         : getRecentTracks(10),
