@@ -1,6 +1,6 @@
-import { WeReadBook, WeReadChapter, WeReadHighlight } from '@/types/weread';
+import { WeReadBook, WeReadChapter, WeReadHighlight, WeReadRawBook, WeReadRawHighlight, WeReadChapterResponse } from '@/types/weread';
 
-const WEREAD_URL = "https://weread.qq.com/";
+// const WEREAD_URL = "https://weread.qq.com/";
 const WEREAD_NOTEBOOKS_URL = "https://i.weread.qq.com/user/notebooks";
 const WEREAD_BOOKMARKLIST_URL = "https://i.weread.qq.com/book/bookmarklist";
 const WEREAD_CHAPTER_INFO = "https://i.weread.qq.com/book/chapterInfos";
@@ -24,10 +24,10 @@ export async function getRecentBooks(limit: number = 10): Promise<WeReadBook[]> 
     }
 
     const data = await response.json();
-    const books: WeReadBook[] = data.books
-      .sort((a: any, b: any) => b.sort - a.sort)
+    const books: WeReadBook[] = (data.books as WeReadRawBook[])
+      .sort((a, b) => b.sort - a.sort)
       .slice(0, limit)
-      .map((book: any) => ({
+      .map((book) => ({
         bookId: book.book.bookId,
         title: book.book.title,
         author: book.book.author,
@@ -58,14 +58,14 @@ export async function getBookHighlights(bookId: string): Promise<WeReadHighlight
     }
 
     const data = await response.json();
-    const highlights: WeReadHighlight[] = data.updated
-      .sort((a: any, b: any) => {
+    const highlights: WeReadHighlight[] = (data.updated as WeReadRawHighlight[])
+      .sort((a, b) => {
         if (a.chapterUid === b.chapterUid) {
           return parseInt(a.range.split('-')[0]) - parseInt(b.range.split('-')[0]);
         }
         return a.chapterUid - b.chapterUid;
       })
-      .map((item: any) => ({
+      .map((item) => ({
         bookId,
         chapterUid: item.chapterUid,
         markText: item.markText,
@@ -104,9 +104,9 @@ export async function getChapterInfo(bookId: string): Promise<WeReadChapter[]> {
       throw new Error('获取章节信息失败');
     }
 
-    const data = await response.json();
+    const data = await response.json() as WeReadChapterResponse;
     if (data.data?.[0]?.updated) {
-      return data.data[0].updated.map((chapter: any) => ({
+      return data.data[0].updated.map((chapter) => ({
         chapterUid: chapter.chapterUid,
         title: chapter.title,
         level: chapter.level
