@@ -20,7 +20,7 @@ export default async function HomePage() {
     return (
       <main className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-4 my-8">
-          <div className="relative">
+          {/* <div className="relative">
             <Image
               src="https://r2.img.develop.cool/c9db28a03675579c833473249d73cbdf.jpg"
               alt="李梦鱼"
@@ -29,7 +29,7 @@ export default async function HomePage() {
               className="rounded-full border-2 border-gray-200"
               // priority
             />
-          </div>
+          </div> */}
           <h1 className="text-4xl font-bold tracking-tight">
             李梦鱼的主页
           </h1>
