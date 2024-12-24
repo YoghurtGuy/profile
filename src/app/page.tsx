@@ -14,7 +14,7 @@ export default async function HomePage() {
       process.env.MUSIC_TYPE == "top" 
         ? getTopTracks(10, process.env.MUSIC_PEERIOD)
         : getRecentTracks(10),
-      getRecentBooks(10)
+      getRecentBooks(4)
     ]);
   
     return (
