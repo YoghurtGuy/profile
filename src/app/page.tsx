@@ -27,11 +27,11 @@ export default async function HomePage() {
               width={96}
               height={96}
               className="rounded-full border-2 border-gray-200"
-              priority
+              // priority
             />
           </div>
           <h1 className="text-4xl font-bold tracking-tight">
-            李梦鱼的个人主页
+            李梦鱼的主页
           </h1>
         </div>
         <RecentVideo movies={recentVideo} />
