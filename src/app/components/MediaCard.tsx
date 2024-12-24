@@ -20,7 +20,6 @@ export default function MediaCard({
   link,
   rating,
   comment,
-  priority = false
 }: MediaCardProps) {
   const content = (
     <Card 
