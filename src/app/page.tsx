@@ -5,7 +5,7 @@ import RecentBooks from './components/RecentBooks';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import RecentVideo from './components/RecentVideo';
 import { getWatched } from '@/api/douban';
-import Image from "next/image";
+// import Image from "next/image";
 
 export default async function HomePage() {
   try {
