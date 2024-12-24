@@ -22,8 +22,8 @@ export default async function HomePage() {
         <div className="flex items-center justify-center gap-4 my-8">
           <div className="relative">
             <Image
-              src="https://avatars.githubusercontent.com/u/41856917"
-              alt="李梦鱼的头像"
+              src="https://r2.img.develop.cool/c9db28a03675579c833473249d73cbdf.jpg"
+              alt="李梦鱼"
               width={96}
               height={96}
               className="rounded-full border-2 border-gray-200"
