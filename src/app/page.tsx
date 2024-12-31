@@ -1,7 +1,7 @@
 import { getRecentTracks, getTopTracks } from '@/api/lastfm';
-import { getRecentBooks } from '@/api/weread';
+// import { getRecentBooks } from '@/api/weread';
 import RecentMusic from './components/RecentMusic';
-import RecentBooks from './components/RecentBooks';
+// import RecentBooks from './components/RecentBooks';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import RecentVideo from './components/RecentVideo';
 import { getWatched } from '@/api/douban';
@@ -9,14 +9,17 @@ import { getWatched } from '@/api/douban';
 
 export default async function HomePage() {
   try {
-    const [recentVideo, music, books] = await Promise.all([
-      process.env.DOUBAN_ID?getWatched(process.env.DOUBAN_ID, 1):[],
-      process.env.MUSIC_TYPE == "top" 
+    const [recentVideo,
+      music,
+      // books
+    ] = await Promise.all([
+      process.env.DOUBAN_ID ? getWatched(process.env.DOUBAN_ID, 1) : [],
+      process.env.MUSIC_TYPE == "top"
         ? getTopTracks(10, process.env.MUSIC_PEERIOD)
         : getRecentTracks(10),
-      getRecentBooks(4)
+      // getRecentBooks(4)
     ]);
-  
+
     return (
       <main className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-4 my-8">
@@ -34,9 +37,9 @@ export default async function HomePage() {
             李梦鱼的主页
           </h1>
         </div>
-        <RecentVideo movies={recentVideo} />
         <RecentMusic tracks={music} />
-        <RecentBooks books={books} />
+        <RecentVideo movies={recentVideo} />
+        {/* <RecentBooks books={books} /> */}
       </main>
     );
   } catch (error) {
