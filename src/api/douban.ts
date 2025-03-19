@@ -62,6 +62,6 @@ export async function getWatched(userId: string, pageCount: number = 1): Promise
     return results.flat();
   } catch (error) {
     console.error('获取豆瓣观影记录失败:', error);
-    throw new Error('获取豆瓣观影记录失败');
+    return []
   }
 }

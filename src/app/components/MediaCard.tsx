@@ -2,6 +2,7 @@
 
 import { Card, CardBody, CardFooter, Image } from "@nextui-org/react";
 import Link from 'next/link';
+import { env } from "@/env";
 
 interface MediaCardProps {
   title: string;
@@ -41,7 +42,7 @@ export default function MediaCard({
         <b className="line-clamp-1 text-center">{title}</b>
         {author && <p className="text-default-500 text-tiny line-clamp-1 text-center">{author}</p>}
         {rating && <p className="text-xs text-default-500">评分: {rating}</p>}
-        {process.env.SHOW_DOUBAN_COMMENT === "true" && comment && (
+        {env.NEXT_PUBLIC_SHOW_DOUBAN_COMMENT === true && comment && (
           <p className="text-xs text-default-600 mt-1 line-clamp-2">{comment}</p>
         )}
       </CardFooter>
