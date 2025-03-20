@@ -41,7 +41,7 @@ export default function MediaCard({
       <CardFooter className="text-small flex-col items-center">
         <b className="line-clamp-1 text-center">{title}</b>
         {author && <p className="text-default-500 text-tiny line-clamp-1 text-center">{author}</p>}
-        {rating && <p className="text-xs text-default-500">评分: {rating}</p>}
+        {rating && <p className="text-xs text-default-500">{'⭐'.repeat(parseInt(rating))}</p>}
         {env.NEXT_PUBLIC_SHOW_DOUBAN_COMMENT === true && comment && (
           <p className="text-xs text-default-600 mt-1 line-clamp-2">{comment}</p>
         )}

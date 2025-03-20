@@ -73,6 +73,7 @@ export async function getRecentBooks(
                 bookId: book.bookId,
                 title: book.title,
                 cover: book.cover.replace("/s_", "/t7_"),
+                author: book.author
             })
         );
 

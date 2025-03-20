@@ -1,5 +1,6 @@
-import { SpotifyConfig, SpotifySearchResponse } from "@/types/spotify";
+import { SpotifyConfig, SpotifyAlbumResponse } from "@/types/spotify";
 import { env } from "@/env";
+import { similarSort } from "@/utils/similar";
 
 const spotifyConfig: SpotifyConfig = {
     clientId: process.env.SPOTIFY_CLIENT_ID || "",
@@ -19,68 +20,58 @@ async function getSpotifyToken(): Promise<string> {
             ).toString("base64")}`,
         },
         body: "grant_type=client_credentials",
-        next: { revalidate: env.REFRESH },
+        next: { revalidate: 60 * 60 },
     });
 
     const data = await response.json();
     return data.access_token;
 }
 
-const coverCache = new Map<string, string>();
-
 /**
  * 搜索歌曲获取封面
  */
-export async function searchTrackCover(
+export async function searchCover(
     artist: string,
-    track: string,
+    name: string,
+    type: "track" | "album",
     retries = 3
 ): Promise<string | null> {
-    const cacheKey = `${artist}-${track}`;
-
-    // 检查缓存
-    if (coverCache.has(cacheKey)) {
-        return coverCache.get(cacheKey) || null;
-    }
-
     try {
         const token = await getSpotifyToken();
-        const query = encodeURIComponent(`track:${track} artist:${artist}`);
-
+        const params={
+            q: name.replace(" ", ""),  //`${type}:${name.replace(" ", "")} artist:${artist}`,
+            type:type
+        }
+        const url = new URL("https://api.spotify.com/v1/search");
+        url.search = new URLSearchParams(params).toString();
+        const requestOptions = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            next: { revalidate: env.REFRESH },
+        };
         const response = await fetch(
-            `https://api.spotify.com/v1/search?q=${query}&type=track&limit=1`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                next: { revalidate: env.REFRESH },
-            }
+            url,
+            requestOptions
         );
 
         if (!response.ok) {
-          throw new Error(`Spotify API 请求失败: ${response.statusText}`);
+            throw new Error(`Spotify API 请求失败: ${response.statusText}`);
         }
 
-        const data: SpotifySearchResponse = await response.json();
-        const tracks = data.tracks.items;
-
-        if (tracks.length > 0) {
-            // 返回最大尺寸的封面
-            const coverUrl = tracks[0].album.images[0]?.url || null;
-
-            // 存入缓存
-            if (coverUrl) {
-                coverCache.set(cacheKey, coverUrl);
-            }
-            return coverUrl;
-        }
-
-        return null;
+        const data: SpotifyAlbumResponse = await response.json();
+        const items = data.albums.items
+        .sort((a, b) =>
+            similarSort(name, a.name, b.name)
+        );
+        const coverUrl =
+            items.find((item) => item.images?.[0]?.url)?.images[0]?.url || null;
+        return coverUrl;
     } catch (error) {
         if (retries > 0) {
             // 等待 1 秒后重试
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            return searchTrackCover(artist, track, retries - 1);
+            return searchCover(artist, name, type, retries - 1);
         }
         console.error("获取 Spotify 封面失败:", error);
         return null;

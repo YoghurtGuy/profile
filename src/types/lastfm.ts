@@ -69,13 +69,9 @@ export interface LastFMTopTracksResponse {
   };
 }
 
-export interface ProcessedTrack {
+export interface ProcessedAlbum {
   name: string;
   artist: {
-    name: string;
-    mbid?: string;
-  };
-  album: {
     name: string;
     mbid?: string;
   };
@@ -115,3 +111,26 @@ export interface LastFMAlbumInfo {
     };
   };
 } 
+type Image = {
+  size: "small" | "medium" | "large" | "extralarge";
+  "#text": string;
+};
+
+type Artist = {
+  url: string;
+  name: string;
+  mbid: string;
+};
+
+export type Album = {
+  artist: Artist;
+  image: Image[];
+  mbid: string;
+  url: string;
+  playcount: string;
+  "@attr": {
+      rank: string;
+  };
+  name: string;
+};
+

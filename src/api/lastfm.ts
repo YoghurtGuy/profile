@@ -1,10 +1,9 @@
 import {
     LastFMConfig,
-    LastFMResponse,
-    ProcessedTrack,
-    LastFMTopTracksResponse,
+    ProcessedAlbum,
+    Album
 } from "@/types/lastfm";
-import { searchTrackCover } from "./spotify";
+import { searchCover } from "./spotify";
 import { env } from "@/env";
 
 const lastfmConfig: LastFMConfig = {
@@ -13,83 +12,18 @@ const lastfmConfig: LastFMConfig = {
 };
 
 /**
- * 获取最近播放的音乐并处理封面
- * @param limit 限制返回数量
- */
-export async function getRecentTracks(
-    limit: number = 10
-): Promise<ProcessedTrack[]> {
-    try {
-        const url = new URL("http://ws.audioscrobbler.com/2.0/");
-        url.search = new URLSearchParams({
-            method: "user.getrecenttracks",
-            user: lastfmConfig.username,
-            api_key: lastfmConfig.apiKey,
-            format: "json",
-            limit: limit.toString(),
-        }).toString();
-
-        const response = await fetch(url, {
-            next: { revalidate: env.REFRESH },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Last.fm API 请求失败: ${response.statusText}`);
-        }
-
-        const data: LastFMResponse = await response.json();
-        const tracks = data.recenttracks.track;
-
-        // 处理每个曲目的封面
-        const processedTracks = await Promise.all(
-            tracks.map(async (track) => {
-                const spotifyCover = await searchTrackCover(
-                    track.artist["#text"],
-                    track.name
-                );
-                return {
-                    name: track.name,
-                    artist: {
-                        name: track.artist["#text"],
-                        mbid: track.artist.mbid,
-                    },
-                    album: {
-                        name: track.album["#text"],
-                        mbid: track.album.mbid,
-                    },
-                    image: spotifyCover || track.image[3]["#text"],
-                    url: track.url,
-                    mbid: track.mbid,
-                    date: track.date
-                        ? {
-                              timestamp: track.date.uts,
-                              text: track.date["#text"],
-                          }
-                        : undefined,
-                };
-            })
-        );
-
-        return processedTracks;
-    } catch (error) {
-        console.error("获取最近播放记录失败:", error);
-        return [];
-    }
-}
-
-/**
- * 获取用户最常播放的音乐
+ * 获取用户最常播放的专辑
  * @param limit 限制返回数量
  * @param period 时间段 (overall | 7day | 1month | 3month | 6month | 12month)
  */
-export async function getTopTracks(
+export async function getTopAlbums(
     limit: number = 10,
     period: string = "overall"
-): Promise<ProcessedTrack[]> {
+): Promise<ProcessedAlbum[]> {
     try {
         const url = new URL("http://ws.audioscrobbler.com/2.0/");
         url.search = new URLSearchParams({
-            method: "user.gettoptracks",
+            method: "user.gettopalbums",
             user: lastfmConfig.username,
             api_key: lastfmConfig.apiKey,
             format: "json",
@@ -105,47 +39,33 @@ export async function getTopTracks(
             throw new Error(`Last.fm API 请求失败: ${response.statusText}`);
         }
 
-        const data: LastFMTopTracksResponse = await response.json();
-        const tracks = data.toptracks.track;
+        const data = await response.json();
+        const albums:Album[] = data.topalbums.album;
 
-        const processedTracks = await Promise.all(
-            tracks.map(async (track) => {
-                const spotifyCover = await searchTrackCover(
-                    track.artist.name,
-                    track.name
+        const processedCover = await Promise.all(
+            albums.map(async (album) => {
+                const spotifyCover = await searchCover(
+                    album.artist.name,
+                    album.name,
+                    "album"
                 );
 
-                // 获取专辑信息
-                let albumInfo = null;
-                if (track.name && track.artist.name) {
-                    albumInfo = await getAlbumInfo(
-                        track.artist.name,
-                        track.name
-                    );
-                }
-
                 return {
-                    name: track.name,
+                    name: album.name,
                     artist: {
-                        name: track.artist.name,
-                        mbid: track.artist.mbid,
-                    },
-                    album: {
-                        name: albumInfo?.album?.name || "",
-                        mbid: albumInfo?.album?.mbid || "",
+                        name: album.artist.name,
+                        mbid: album.artist.mbid,
                     },
                     image:
-                        spotifyCover ||
-                        albumInfo?.album?.image?.[3]?.["#text"] ||
-                        track.image[3]["#text"],
-                    url: track.url,
-                    mbid: track.mbid,
-                    playcount: parseInt(track.playcount, 10),
+                        spotifyCover ??
+                        album.image[0]?.["#text"],
+                    url: album.url,
+                    mbid: album.mbid,
+                    playcount: parseInt(album.playcount, 10),
                 };
             })
         );
-
-        return processedTracks;
+        return processedCover;
     } catch (error) {
         console.error("获取最常播放记录失败:", error);
         return [];
@@ -158,35 +78,35 @@ export async function getTopTracks(
  * @param album 专辑名称
  * @param mbid 可选的 MusicBrainz ID
  */
-async function getAlbumInfo(artist: string, album: string, mbid?: string) {
-    try {
-        const params: Record<string, string> = {
-            method: "album.getinfo",
-            api_key: lastfmConfig.apiKey,
-            format: "json",
-        };
+// async function getAlbumInfo(artist: string, album: string, mbid?: string) {
+//     try {
+//         const params: Record<string, string> = {
+//             method: "album.getinfo",
+//             api_key: lastfmConfig.apiKey,
+//             format: "json",
+//         };
 
-        if (mbid) {
-            params.mbid = mbid;
-        } else {
-            params.artist = artist;
-            params.album = album;
-        }
+//         if (mbid) {
+//             params.mbid = mbid;
+//         } else {
+//             params.artist = artist;
+//             params.album = album;
+//         }
 
-        const url = new URL("http://ws.audioscrobbler.com/2.0/");
-        url.search = new URLSearchParams(params).toString();
+//         const url = new URL("http://ws.audioscrobbler.com/2.0/");
+//         url.search = new URLSearchParams(params).toString();
 
-        const response = await fetch(url, {
-            next: { revalidate: env.REFRESH },
-        });
+//         const response = await fetch(url, {
+//             next: { revalidate: env.REFRESH },
+//         });
 
-        if (!response.ok) {
-            throw new Error(`Last.fm API 请求失败: ${response.statusText}`);
-        }
+//         if (!response.ok) {
+//             throw new Error(`Last.fm API 请求失败: ${response.statusText}`);
+//         }
 
-        return await response.json();
-    } catch (error) {
-        console.error("获取专辑信息失败:", error);
-        return null;
-    }
-}
+//         return await response.json();
+//     } catch (error) {
+//         console.error("获取专辑信息失败:", error);
+//         return null;
+//     }
+// }
